@@ -1,0 +1,20 @@
+# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
+# from ._utils import _C
+from maskrcnn_benchmark import _C
+
+from apex import amp
+
+# Only valid with fp32 inputs - give AMP the hint
+nms = amp.float_function(_C.nms)
+soft_nms_f = amp.float_function(_C.soft_nms)
+
+# nms.__doc__ = """
+# This function performs Non-maximum suppresion"""
+
+def soft_nms(boxes, scores, nms_thresh=0.3, sigma=0.5, score_thresh=0.001, method=1):
+    # method: 1) linear, 2) gaussian, else) original NMS
+    boxes2 = boxes.clone()
+    scores2 = scores.clone()
+    indices, keep = soft_nms_f(boxes2, scores2, nms_thresh, sigma, score_thresh, method)
+    return indices, keep, scores2
+
